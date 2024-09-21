@@ -1,7 +1,7 @@
 spring:
   application:
     name:
-      auth2
+      spring-oauth2-example
   security:
     oauth2:
       client:
