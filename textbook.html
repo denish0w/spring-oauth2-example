@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Trilingual Master: Persistent Progress</title>
+    <style>
+        :root { --primary: #1a73e8; --success: #34a853; --danger: #ea4335; --bg: #f0f2f5; }
+        body { font-Family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; background-color: var(--bg); margin: 0; padding: 10px; -webkit-font-smoothing: antialiased; }
+        .panel { width: 100%; max-width: 400px; margin-bottom: 10px; }
+        .cat-container { background: white; border-radius: 12px; padding: 10px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .cat-header { display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #555; }
+        .progress-bg { background: #eee; height: 6px; border-radius: 3px; overflow: hidden; }
+        .progress-fill { background: var(--success); height: 100%; width: 0%; transition: width 0.5s ease; }
+        .cat-select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ccc; font-size: 14px; font-weight: bold; background: white; margin-bottom: 5px; }
+        .diff-container { display: flex; gap: 5px; margin-bottom: 10px; }
+        .btn-ui { flex: 1; padding: 8px; border-radius: 10px; border: 1px solid #ccc; font-size: 11px; font-weight: bold; background: white; cursor: pointer; }
+        .btn-ui.active { background: #333; color: white; border-color: #333; }
+        .type-toggle { display: flex; gap: 5px; background: #ddd; padding: 3px; border-radius: 12px; margin-bottom: 10px; }
+        .mode-container { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+        .mode-btn { padding: 6px 4px; border-radius: 8px; background: white; border: 1px solid #ddd; font-size: 10px; font-weight: bold; flex: 1 1 30%; }
+        .mode-btn.active { border-color: var(--primary); background: var(--primary); color: white; }
+        .header-stats { display: flex; align-items: center; gap: 20px; margin-bottom: 10px; min-height: 60px; }
+        .timer-container { position: relative; width: 50px; height: 50px; }
+        .timer-svg { transform: rotate(-90deg); width: 50px; height: 50px; }
+        .timer-circle-bg { fill: none; stroke: #eee; stroke-width: 4; }
+        .timer-circle-prog { fill: none; stroke: var(--primary); stroke-width: 4; stroke-dasharray: 144.5; stroke-dashoffset: 0; transition: stroke-dashoffset 0.1s linear; stroke-linecap: round; }
+        .timer-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px; font-weight: bold; }
+        .score-box { background: white; padding: 10px 20px; border-radius: 15px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .card-container { background: white; padding: 1.5rem; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); text-align: center; width: 90%; max-width: 350px; min-height: 320px; transition: transform 0.3s; position: relative; }
+        .type-tag { font-size: 10px; text-transform: uppercase; color: white; letter-spacing: 1px; margin: 0 auto 10px auto; display: inline-block; padding: 2px 10px; border-radius: 8px; font-weight: bold; }
+        .word { font-size: 1.6rem; font-weight: 800; color: #222; margin-bottom: 1.5rem; min-height: 4rem; display: flex; align-items: center; justify-content: center; }
+        .trivia-grid { display: flex; flex-direction: column; gap: 8px; }
+        .choice-btn { padding: 12px; border: 2px solid #f0f0f0; border-radius: 14px; background: white; font-size: 14px; font-weight: 500; cursor: pointer; }
+        .choice-btn.correct { background: var(--success) !important; color: white; border-color: var(--success); }
+        .choice-btn.wrong { background: var(--danger) !important; color: white; border-color: var(--danger); }
+        .btn-action { padding: 15px; border-radius: 14px; border: none; font-weight: bold; width: 100%; cursor: pointer; font-size: 16px; color: white; }
+        .stats-footer { margin-top: 1.5rem; font-size: 12px; color: #555; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid #eee; padding-top: 12px; width: 100%; }
+        .stat-row { display: flex; justify-content: space-around; width: 100%; }
+        .rem-box { background: #fffde7; padding: 5px 15px; border-radius: 10px; font-weight: bold; color: #f57f17; border: 1px solid #fff9c4; }
+        #dict-section { display: none; width: 90%; max-width: 420px; background: white; border-radius: 15px; padding: 10px; margin: 20px 0; font-size: 10px; height: 300px; overflow-y: scroll; }
+        .dict-item { display: grid; grid-template-columns: 0.8fr 1fr 1fr 1fr; padding: 8px 0; border-bottom: 1px solid #eee; text-align: center; align-items: center; }
+        .mastered { background: #e6f4ea !important; color: #1e8e3e; font-weight: bold; }
+        /* Tags */
+        .tag-Travel { background: #2196f3; } .tag-city { background: #009688; } .tag-Shopping { background: #e91e63; }
+        .tag-Fashion { background: #9c27b0; } .tag-Family { background: #ff9800; } .tag-Finance { background: #4caf50; }
+        .tag-Home { background: #795548; } .tag-colors { background: #f44336; } .tag-Connect { background: #607d8b; }
+        .tag-Actions { background: #00bcd4; } .tag-Phrases { background: #673ab7; }
+    </style>
+</head>
+<body>
+
+    <div id="difficulty-ui" class="panel diff-container" style="display:none">
+        <button class="btn-ui" id="diff-15" onclick="setDifficulty(15)">EASY</button>
+        <button class="btn-ui active" id="diff-10" onclick="setDifficulty(10)">MED</button>
+        <button class="btn-ui" id="diff-5" onclick="setDifficulty(5)">HARD</button>
+    </div>
+
+    <div class="panel">
+        <div class="cat-container">
+            <div class="cat-header"><span>Category Progress</span><span id="cat-percent">0%</span></div>
+            <div class="progress-bg"><div id="cat-bar" class="progress-fill"></div></div>
+        </div>
+        <!-- Select with hardcoded "All Categories" -->
+        <select id="cat-filter" class="cat-select" onchange="resetDeck()">
+            <option value="all">All Categories</option>
+        </select>
+        <div class="type-toggle">
+            <button id="style-flash" class="btn-ui active" onclick="setPlayStyle('flash')">Flashcard</button>
+            <button id="style-trivia" class="btn-ui" onclick="setPlayStyle('trivia')">Trivia</button>
+        </div>
+        <div class="mode-container">
+            <button class="mode-btn active" onclick="setLangMode('ru', 'ee', this)">RU → EE</button>
+            <button class="mode-btn" onclick="setLangMode('ee', 'ru', this)">EE → RU</button>
+            <button class="mode-btn" onclick="setLangMode('ee', 'en', this)">EE → EN</button>
+            <button class="mode-btn" onclick="setLangMode('en', 'ee', this)">EN → EE</button>
+            <button class="mode-btn" onclick="setLangMode('ru', 'en', this)">RU → EN</button>
+            <button class="mode-btn" onclick="setLangMode('en', 'ru', this)">EN → RU</button>
+        </div>
+    </div>
+
+    <div id="trivia-stats-header" class="header-stats" style="visibility: hidden;">
+        <div class="timer-container">
+            <svg class="timer-svg"><circle class="timer-circle-bg" cx="25" cy="25" r="23"></circle><circle id="timer-bar" class="timer-circle-prog" cx="25" cy="25" r="23"></circle></svg>
+            <div id="timer-num" class="timer-text">10</div>
+        </div>
+        <div class="score-box">Points: <span id="stat-points">0</span></div>
+    </div>
+
+    <div class="card-container" id="main-card">
+        <span class="type-tag" id="display-type">---</span>
+        <div class="word" id="display-q">Loading...</div>
+        <div id="view-flash">
+            <div class="flash-ans" id="display-a" style="visibility: hidden;">---</div>
+            <button class="btn-action" id="btn-reveal" style="background: var(--primary);" onclick="revealFlash()">Reveal Answer</button>
+            <div id="flash-controls" style="display: none; gap: 10px;">
+                <button class="btn-action" style="background: var(--success);" onclick="submitAnswer(true)">Correct ✅</button>
+                <button class="btn-action" style="background: var(--danger);" onclick="submitAnswer(false)">Mistake ❌</button>
+            </div>
+        </div>
+        <div id="view-trivia" style="display: none;"><div class="trivia-grid" id="trivia-options"></div></div>
+        <div class="stats-footer">
+            <div class="stat-row"><div class="rem-box">Questions Yet: <span id="stat-total-rem">0</span></div></div>
+            <div class="stat-row"><span>In Round: <b id="stat-left">0</b></span><span>✅ <span id="stat-c">0</span></span><span>❌ <span id="stat-m">0</span></span></div>
+        </div>
+    </div>
+
+    <button class="btn-action" style="background: #5f6368; width: 90%; max-width: 350px; margin-top: 15px;" onclick="toggleDict()">📖 Full Dictionary</button>
+    <div id="dict-section">
+        <button class="btn-action" style="background: var(--danger); margin-bottom: 10px; font-size: 12px; padding: 8px;" onclick="clearMastery()">Reset All Progress</button>
+        <div id="dict-list"></div>
+    </div>
+
+    <script>
+        const rawWords = [
+  { "ru": "Дом", "ee": "Maja", "en": "House", "type": "Objects" },
+  { "ru": "Вода", "ee": "Vesi", "en": "Water", "type": "Nature" },
+  { "ru": "Кот", "ee": "Kass", "en": "Cat", "type": "Animals" },
+  { "ru": "Книга", "ee": "Raamat", "en": "Book", "type": "Objects" },
+  { "ru": "Я ем", "ee": "Söö/n", "en": "I eat", "type": "Actions" },
+  { "ru": "Аэропорт", "ee": "Lennujaam", "en": "Airport", "type": "Places" },
+  { "ru": "Билет", "ee": "Pilet", "en": "Ticket", "type": "Objects" },
+  { "ru": "Отель", "ee": "Hotell", "en": "Hotel", "type": "Places" },
+  { "ru": "Чемодан", "ee": "Kohver", "en": "Suitcase", "type": "Objects" },
+  { "ru": "Поезд", "ee": "Rong", "en": "Train", "type": "Objects" },
+  { "ru": "Порт", "ee": "Sadam", "en": "Port", "type": "Places" },
+  { "ru": "Паспорт", "ee": "Pass", "en": "Passport", "type": "Objects" },
+  { "ru": "Деньги", "ee": "Raha", "en": "Money", "type": "Objects" },
+  { "ru": "Карта", "ee": "Kaart", "en": "Map/Card", "type": "Objects" },
+  { "ru": "Улица", "ee": "Tänav", "en": "Street", "type": "Places" },
+  { "ru": "Я путешествую", "ee": "Reisi/n", "en": "I travel", "type": "Actions" },
+  { "ru": "Я лечу", "ee": "Lenda/n", "en": "I fly", "type": "Actions" },
+  { "ru": "Я еду", "ee": "Sõida/n", "en": "I drive/ride", "type": "Actions" },
+  { "ru": "Я бронирую", "ee": "Broneeri/n", "en": "I book", "type": "Actions" },
+  { "ru": "Я плачу", "ee": "Maksa/n", "en": "I pay", "type": "Actions" },
+  { "ru": "Я спрашиваю", "ee": "Küsi/n", "en": "I ask", "type": "Actions" },
+  { "ru": "Я жду", "ee": "Oota/n", "en": "I wait", "type": "Actions" },
+  { "ru": "Я отдыхаю", "ee": "Puhka/n", "en": "I rest", "type": "Actions" },
+  { "ru": "Магазин", "ee": "Kauplus", "en": "Store", "type": "Places" },
+  { "ru": "Рынок", "ee": "Turg", "en": "Market", "type": "Places" },
+  { "ru": "Цена", "ee": "Hind", "en": "Price", "type": "Abstract" },
+  { "ru": "Скидка", "ee": "Soodustus", "en": "Discount", "type": "Abstract" },
+  { "ru": "Чек", "ee": "Tšekk", "en": "Receipt", "type": "Objects" },
+  { "ru": "Сумка", "ee": "Kott", "en": "Bag", "type": "Objects" },
+  { "ru": "Сдача", "ee": "Tagastusraha", "en": "Change", "type": "Objects" },
+  { "ru": "Одежда", "ee": "Riided", "en": "Clothes", "type": "Objects" },
+  { "ru": "Размер", "ee": "Suurus", "en": "Size", "type": "Abstract" },
+  { "ru": "Я покупаю", "ee": "Osta/n", "en": "I buy", "type": "Actions" },
+  { "ru": "Я продаю", "ee": "Müü/n", "en": "I sell", "type": "Actions" },
+  { "ru": "Я примеряю", "ee": "Selga proovi/n", "en": "I try on", "type": "Actions" },
+  { "ru": "Я ищу", "ee": "Otsi/n", "en": "I search", "type": "Actions" },
+  { "ru": "Я выбираю", "ee": "Vali/n", "en": "I choose", "type": "Actions" },
+  { "ru": "Семья", "ee": "Pere", "en": "Family", "type": "People" },
+  { "ru": "Мать", "ee": "Ema", "en": "Mother", "type": "People" },
+  { "ru": "Отец", "ee": "Isa", "en": "Father", "type": "People" },
+  { "ru": "Ребенок", "ee": "Laps", "en": "Child", "type": "People" },
+  { "ru": "Брат", "ee": "Vend", "en": "Brother", "type": "People" },
+  { "ru": "Сестра", "ee": "Õde", "en": "Sister", "type": "People" },
+  { "ru": "Цвет", "ee": "Värv", "en": "Color", "type": "Descriptions" },
+  { "ru": "Красный", "ee": "Punane", "en": "Red", "type": "Descriptions" },
+  { "ru": "Синий", "ee": "Sinine", "en": "Blue", "type": "Descriptions" },
+  { "ru": "Зеленый", "ee": "Roheline", "en": "Green", "type": "Descriptions" },
+  { "ru": "Черный", "ee": "Must", "en": "Black", "type": "Descriptions" },
+  { "ru": "Белый", "ee": "Valge", "en": "White", "type": "Descriptions" },
+  { "ru": "Жить", "ee": "Elama", "en": "To live", "type": "Actions" },
+  { "ru": "Комната", "ee": "Tuba", "en": "Room", "type": "Places" },
+  { "ru": "Кухня", "ee": "Köök", "en": "Kitchen", "type": "Places" },
+  { "ru": "Кровать", "ee": "Voodi", "en": "Bed", "type": "Objects" },
+  { "ru": "Стол", "ee": "Laud", "en": "Table", "type": "Objects" },
+  { "ru": "Окно", "ee": "Aken", "en": "Window", "type": "Objects" },
+  { "ru": "Я живу", "ee": "Ela/n", "en": "I live", "type": "Actions" },
+  { "ru": "Банк", "ee": "Pank", "en": "Bank", "type": "Places" },
+  { "ru": "Счет", "ee": "Konto", "en": "Account", "type": "Abstract" },
+  { "ru": "Кредит", "ee": "Laen", "en": "Loan", "type": "Abstract" },
+  { "ru": "Карта", "ee": "Kaart", "en": "Card", "type": "Objects" },
+  { "ru": "Я экономлю", "ee": "Säästa/n", "en": "I save", "type": "Actions" },
+  { "ru": "Я перевожу", "ee": "Kanna/n üle", "en": "I transfer", "type": "Actions" },
+  { "ru": "И", "ee": "Ja", "en": "And", "type": "Conjunctions" },
+  { "ru": "Но/А", "ee": "Aga", "en": "But", "type": "Conjunctions" },
+  { "ru": "Или", "ee": "Või", "en": "Or", "type": "Conjunctions" },
+  { "ru": "Потому что", "ee": "Sest", "en": "Because", "type": "Conjunctions" },
+  { "ru": "Если/Когда", "ee": "Kui", "en": "If/When", "type": "Conjunctions" },
+  { "ru": "Что/Чтобы", "ee": "Et", "en": "That", "type": "Conjunctions" },
+  { "ru": "Тоже/Также", "ee": "Ka", "en": "Also", "type": "Conjunctions" },
+  { "ru": "Но/Однако", "ee": "Kuid", "en": "However", "type": "Conjunctions" },
+  { "ru": "Хотя", "ee": "Kuigi", "en": "Although", "type": "Conjunctions" },
+  { "ru": "Следовательно", "ee": "Seega", "en": "Therefore", "type": "Conjunctions" },
+  { "ru": "До тех пор", "ee": "Kuni", "en": "Until", "type": "Conjunctions" },
+  { "ru": "Поскольку", "ee": "Kuna", "en": "Since/As", "type": "Conjunctions" },
+  { "ru": "А/Только", "ee": "Vaid", "en": "But/Only", "type": "Conjunctions" },
+  { "ru": "Выход/Отправление", "ee": "Väljumine", "en": "Departure", "type": "Travel" },
+  { "ru": "Прибытие", "ee": "Saabumine", "en": "Arrival", "type": "Travel" },
+  { "ru": "Ворота (Гейт)", "ee": "Värav", "en": "Gate", "type": "Travel" },
+  { "ru": "Контроль безопасности", "ee": "Turvakontroll", "en": "Security check", "type": "Travel" },
+  { "ru": "Посадочный талон", "ee": "Pardakaart", "en": "Boarding pass", "type": "Travel" },
+  { "ru": "Выдача багажа", "ee": "Pagasi väljastus", "en": "Baggage claim", "type": "Travel" },
+  { "ru": "Полет", "ee": "Lend", "en": "Flight", "type": "Travel" },
+  { "ru": "Я приземляюсь", "ee": "Maandu/n", "en": "I land", "type": "Actions" },
+  { "ru": "Я взлетаю", "ee": "Tõuse/n õhku", "en": "I take off", "type": "Actions" },
+  { "ru": "Я регистрируюсь", "ee": "Registreeri/n", "en": "I check-in", "type": "Actions" },
+  { "ru": "Город", "ee": "Linn", "en": "City", "type": "Places" },
+  { "ru": "Улица", "ee": "Tänav", "en": "Street", "type": "Places" },
+  { "ru": "Площадь", "ee": "Väljak", "en": "Square", "type": "Places" },
+  { "ru": "Старый город", "ee": "Vanalinn", "en": "Old town", "type": "Places" },
+  { "ru": "Здание", "ee": "Hoone", "en": "Building", "type": "Places" },
+  { "ru": "Церковь", "ee": "Kirik", "en": "Church", "type": "Places" },
+  { "ru": "Аптека", "ee": "Apteek", "en": "Pharmacy", "type": "Places" },
+  { "ru": "Библиотека", "ee": "Raamatukogu", "en": "Library", "type": "Places" },
+  { "ru": "Остановка", "ee": "Peatus", "en": "Stop", "type": "Places" },
+  { "ru": "Мост", "ee": "Sild", "en": "Bridge", "type": "Places" },
+  { "ru": "Я нахожу", "ee": "Leia/n", "en": "I find", "type": "Actions" },
+  { "ru": "Я гуляю", "ee": "Jaluta/n", "en": "I walk", "type": "Actions" },
+  { "ru": "Я поворачиваю", "ee": "Pööra/n", "en": "I turn", "type": "Actions" },
+  { "ru": "Я жду", "ee": "Oota/n", "en": "I wait", "type": "Actions" },
+  { "ru": "Я смотрю", "ee": "Vaata/n", "en": "I look", "type": "Actions" },
+  { "ru": "Где находится...?", "ee": "Kus on...?", "en": "Where is...?", "type": "Phrases" },
+  { "ru": "Налево", "ee": "Vasakule", "en": "To the left", "type": "Directions" },
+  { "ru": "Направо", "ee": "Paremale", "en": "To the right", "type": "Directions" },
+  { "ru": "Прямо", "ee": "Otse", "en": "Straight", "type": "Directions" },
+  { "ru": "Близко", "ee": "Lähedal", "en": "Near", "type": "Directions" },
+  { "ru": "Далеко", "ee": "Kaugel", "en": "Far", "type": "Directions" },
+  { "ru": "Я помогаю", "ee": "Aita/n", "en": "I help", "type": "Actions" },
+  { "ru": "Я извиняюсь", "ee": "Vabanda/n", "en": "I apologize", "type": "Actions" },
+  { "ru": "Я иду", "ee": "Lähe/n", "en": "I go", "type": "Actions" },
+  { "ru": "Я показываю", "ee": "Näita/n", "en": "I show", "type": "Actions" },
+  { "ru": "Погода", "ee": "Ilm", "en": "Weather", "type": "Nature" },
+  { "ru": "Как дела?", "ee": "Kuidas läheb?", "en": "How is it going?", "type": "Phrases" },
+  { "ru": "Работа", "ee": "Töö", "en": "Work", "type": "Activities" },
+  { "ru": "Свободное время", "ee": "Vaba aeg", "en": "Free time", "type": "Activities" },
+  { "ru": "Имя", "ee": "Nimi", "en": "Name", "type": "Abstract" },
+  { "ru": "Приятно познакомиться", "ee": "Meeldiv tutvuda", "en": "Nice to meet you", "type": "Phrases" },
+  { "ru": "Я беседую", "ee": "Vestle/n", "en": "I chat", "type": "Actions" },
+  { "ru": "Я спрашиваю", "ee": "Küsi/n", "en": "I ask", "type": "Actions" },
+  { "ru": "Я отвечаю", "ee": "Vasta/n", "en": "I answer", "type": "Actions" },
+  { "ru": "Я понимаю", "ee": "Saa/n aru", "en": "I understand", "type": "Actions" },
+  { "ru": "Сосед", "ee": "Naaber", "en": "Neighbor", "type": "People" },
+  { "ru": "Окрестности", "ee": "Naabruskond", "en": "Neighborhood", "type": "Places" },
+  { "ru": "Квартира", "ee": "Korter", "en": "Apartment", "type": "Places" },
+  { "ru": "Ключ", "ee": "Võti", "en": "Key", "type": "Objects" },
+  { "ru": "Гость", "ee": "Külaline", "en": "Guest", "type": "People" },
+  { "ru": "Сад", "ee": "Aed", "en": "Garden", "type": "Places" },
+  { "ru": "Стена", "ee": "Sein", "en": "Wall", "type": "Objects" },
+  { "ru": "Почтовый ящик", "ee": "Postkast", "en": "Mailbox", "type": "Objects" },
+  { "ru": "Я посещаю", "ee": "Külasta/n", "en": "I visit", "type": "Actions" },
+  { "ru": "Я приветствую", "ee": "Tervita/n", "en": "I greet", "type": "Actions" },
+  { "ru": "Я мешаю/смешиваю", "ee": "Sega/n", "en": "I disturb/mix", "type": "Actions" },
+  { "ru": "Я одалживаю", "ee": "Laena/n", "en": "I borrow/lend", "type": "Actions" },
+  { "ru": "Дружелюбный", "ee": "Sõbralik", "en": "Friendly", "type": "Descriptions" },
+  { "ru": "Тихий", "ee": "Vaikne", "en": "Quiet", "type": "Descriptions" },
+  { "ru": "Шумный", "ee": "Lärmakas", "en": "Noisy", "type": "Descriptions" },
+  { "ru": "Америка", "ee": "Ameerika", "en": "America", "type": "Places" },
+  { "ru": "В Америке", "ee": "Ameerikas", "en": "In America", "type": "Places" },
+  { "ru": "Американец", "ee": "Ameeriklane", "en": "American", "type": "People" },
+  { "ru": "Эстонский язык", "ee": "Eesti keel", "en": "Estonian language", "type": "Abstract" },
+  { "ru": "Эстонец", "ee": "Eestlane", "en": "Estonian person", "type": "People" },
+  { "ru": "Я живу", "ee": "Ela/n", "en": "I live", "type": "Actions" },
+  { "ru": "Завтра", "ee": "Homme", "en": "Tomorrow", "type": "Time" },
+  { "ru": "Хорошо", "ee": "Hästi", "en": "Well", "type": "Descriptions" },
+  { "ru": "Английский язык", "ee": "Inglise keel", "en": "English language", "type": "Abstract" },
+  { "ru": "И", "ee": "Ja", "en": "And", "type": "Conjunctions" },
+  { "ru": "Тоже", "ee": "Ka", "en": "Also", "type": "Conjunctions" },
+  { "ru": "Я пишу", "ee": "Kirjuta/n", "en": "I write", "type": "Actions" },
+  { "ru": "Дома", "ee": "Kodus", "en": "At home", "type": "Places" },
+  { "ru": "Я прошу / Пожалуйста", "ee": "Palu/n", "en": "I ask / Please", "type": "Actions" },
+  { "ru": "Я говорю на языке", "ee": "Räägi/n keelt", "en": "I speak a language", "type": "Actions" },
+  { "ru": "Там", "ee": "Seal", "en": "There", "type": "Directions" },
+  { "ru": "Здесь", "ee": "Siin", "en": "Here", "type": "Directions" },
+  { "ru": "Я прихожу", "ee": "Tule/n", "en": "I come", "type": "Actions" },
+  { "ru": "Сегодня", "ee": "Täna", "en": "Today", "type": "Time" },
+  { "ru": "Я благодарю", "ee": "Täna/n", "en": "I thank", "type": "Actions" },
+  { "ru": "Очень", "ee": "Väga", "en": "Very", "type": "Descriptions" },
+  { "ru": "Я учусь", "ee": "Õpi/n", "en": "I study", "type": "Actions" },
+  { "ru": "Но / А", "ee": "Aga", "en": "But", "type": "Conjunctions" },
+  { "ru": "Милый", "ee": "Armas", "en": "Lovely", "type": "Descriptions" },
+  { "ru": "Мать", "ee": "Ema", "en": "Mother", "type": "People" },
+  { "ru": "Алло / Привет", "ee": "Hallo", "en": "Hello", "type": "Phrases" },
+  { "ru": "Отец", "ee": "Isa", "en": "Father", "type": "People" },
+  { "ru": "Сам", "ee": "Ise", "en": "Self", "type": "Abstract" },
+  { "ru": "Я сижу", "ee": "Istu/n", "en": "I sit", "type": "Actions" },
+  { "ru": "Да", "ee": "Jah", "en": "Yes", "type": "Phrases" },
+  { "ru": "Же / Ведь", "ee": "Ju", "en": "After all", "type": "Abstract" },
+  { "ru": "Ли (вопросительная частица)", "ee": "Kas", "en": "Whether (question marker)", "type": "Abstract" },
+  { "ru": "Кто", "ee": "Kes", "en": "Who", "type": "People" },
+  { "ru": "Но / Однако", "ee": "Kuid", "en": "But / However", "type": "Conjunctions" },
+  { "ru": "Как", "ee": "Kuidas", "en": "How", "type": "Abstract" },
+  { "ru": "Как дела?", "ee": "Kuidas läheb?", "en": "How is it going?", "type": "Phrases" },
+  { "ru": "Где", "ee": "Kus", "en": "Where", "type": "Places" },
+  { "ru": "Ведь / Ну и", "ee": "Küll", "en": "Indeed", "type": "Abstract" },
+  { "ru": "Я спрашиваю", "ee": "Küsi/n", "en": "I ask", "type": "Actions" },
+  { "ru": "Стол", "ee": "Laud", "en": "Table", "type": "Objects" },
+  { "ru": "Я читаю", "ee": "Loe/n", "en": "I read", "type": "Actions" },
+  { "ru": "Я иду", "ee": "Lähe/n", "en": "I go", "type": "Actions" },
+  { "ru": "Что", "ee": "Mis", "en": "What", "type": "Abstract" },
+  { "ru": "Я вижу", "ee": "Näe/n", "en": "I see", "type": "Actions" },
+  { "ru": "Сын", "ee": "Poeg", "en": "Son", "type": "People" },
+  { "ru": "Мальчик", "ee": "Poiss", "en": "People", "type": "People" },
+  { "ru": "Это", "ee": "See", "en": "This / It", "type": "Abstract" },
+  { "ru": "Я стою", "ee": "Seisa/n", "en": "I stand", "type": "Actions" },
+  { "ru": "Я знаю", "ee": "Tea/n", "en": "I know", "type": "Actions" },
+  { "ru": "Я делаю", "ee": "Tee/n", "en": "I do", "type": "Actions" },
+  { "ru": "Стул", "ee": "Tool", "en": "Chair", "type": "Objects" },
+  { "ru": "Классный / Славный", "ee": "Tore", "en": "Great / Nice", "type": "Descriptions" },
+  { "ru": "Девочка", "ee": "Tüdruk", "en": "Girl", "type": "People" },
+  { "ru": "Дочь", "ee": "Tütar", "en": "Daughter", "type": "People" },
+  { "ru": "Я отвечаю", "ee": "Vasta/n", "en": "I answer", "type": "Actions" },
+  { "ru": "Брат", "ee": "Vend", "en": "Brother", "type": "People" },
+  { "ru": "Сестра", "ee": "Õde", "en": "Sister", "type": "People" },
+  { "ru": "Разум / Толк", "ee": "Aru", "en": "Sense / Understanding", "type": "Abstract" },
+  { "ru": "Нет", "ee": "Ei", "en": "No", "type": "Phrases" },
+  { "ru": "Прежде / До", "ee": "Enne", "en": "Before", "type": "Time" },
+  { "ru": "Что / Чтобы", "ee": "Et", "en": "That", "type": "Conjunctions" },
+  { "ru": "Плохо", "ee": "Halvasti", "en": "Badly", "type": "Descriptions" },
+  { "ru": "Я повествую", "ee": "Jutusta/n", "en": "I narrate", "type": "Actions" },
+  { "ru": "Я боюсь", "ee": "Karda/n", "en": "I fear", "type": "Actions" },
+  { "ru": "Сразу", "ee": "Kohe", "en": "Immediately", "type": "Time" },
+  { "ru": "Домой", "ee": "Koju", "en": "Home (to)", "type": "Directions" },
+  { "ru": "Куда", "ee": "Kuhu", "en": "To where", "type": "Directions" },
+  { "ru": "Если / Когда", "ee": "Kui", "en": "If / When", "type": "Conjunctions" },
+  { "ru": "Я слушаю", "ee": "Kuula/n", "en": "I listen", "type": "Actions" },
+  { "ru": "Я слышу", "ee": "Kuule/n", "en": "I hear", "type": "Actions" },
+  { "ru": "Громко / Сильно", "ee": "Kõvasti", "en": "Loudly / Hard", "type": "Descriptions" },
+  { "ru": "Я лежу", "ee": "Lama/n", "en": "I lie (down)", "type": "Actions" },
+  { "ru": "Иди", "ee": "Mine", "en": "Go (imperative)", "type": "Actions" },
+  { "ru": "Я думаю", "ee": "Mõtle/n", "en": "I think", "type": "Actions" },
+  { "ru": "Так", "ee": "Nii", "en": "So / Like this", "type": "Abstract" },
+  { "ru": "Я жду", "ee": "Oota/n", "en": "I wait", "type": "Actions" },
+  { "ru": "Семья", "ee": "Perekond", "en": "Family", "type": "People" },
+  { "ru": "Нет (отсутствует)", "ee": "Pole", "en": "Is not / There isn't", "type": "Abstract" },
+  { "ru": "Я отдыхаю", "ee": "Puhka/n", "en": "I rest", "type": "Actions" },
+  { "ru": "Я понимаю", "ee": "Saa/n aru", "en": "I understand", "type": "Actions" },
+  { "ru": "Сюда", "ee": "Siia", "en": "To here", "type": "Directions" },
+  { "ru": "Тогда", "ee": "Siis", "en": "Then", "type": "Time" },
+  { "ru": "Туда", "ee": "Sinna", "en": "To there", "type": "Directions" },
+  { "ru": "Друг", "ee": "Sõber", "en": "Friend", "type": "People" },
+  { "ru": "Назад", "ee": "Tagasi", "en": "Back", "type": "Directions" },
+  { "ru": "Тихо", "ee": "Tasa", "en": "Quietly", "type": "Descriptions" },
+  { "ru": "Действительно", "ee": "Tõesti", "en": "Really / Truly", "type": "Abstract" },
+  { "ru": "Я встаю", "ee": "Tõusen", "en": "I rise", "type": "Actions" },
+  { "ru": "Я встаю (на ноги)", "ee": "Tõusen püsti", "en": "I stand up", "type": "Actions" },
+  { "ru": "Я смотрю", "ee": "Vaata/n", "en": "I look", "type": "Actions" },
+  { "ru": "Еще", "ee": "Veel", "en": "More / Yet", "type": "Abstract" },
+  { "ru": "Или", "ee": "Või", "en": "Or", "type": "Conjunctions" },
+  { "ru": "Не (запрет)", "ee": "Ära", "en": "Do not", "type": "Abstract" },
+  { "ru": "Я говорю / Сказываю", "ee": "Ütle/n", "en": "I say", "type": "Actions" },
+  { "ru": "Вниз / Под", "ee": "Alla", "en": "Down / Under", "type": "Directions" },
+  { "ru": "Хороший", "ee": "Hea", "en": "Good", "type": "Descriptions" },
+  { "ru": "Я сияю / Блещу", "ee": "Hiilga/n", "en": "I shine", "type": "Actions" },
+  { "ru": "Красивый", "ee": "Ilus", "en": "Beautiful", "type": "Descriptions" },
+  { "ru": "Человек", "ee": "Inimene", "en": "Person", "type": "People" },
+  { "ru": "Уже", "ee": "Juba", "en": "Already", "type": "Time" },
+  { "ru": "В школе", "ee": "Koolis", "en": "At school", "type": "Places" },
+  { "ru": "Золото", "ee": "Kuld", "en": "Gold", "type": "Objects" },
+  { "ru": "Все", "ee": "Kõik", "en": "All / Everyone", "type": "People" },
+  { "ru": "Я хожу в школу", "ee": "Käi/n koolis", "en": "I go to school", "type": "Actions" },
+  { "ru": "В гости", "ee": "Külla", "en": "To visit", "type": "Directions" },
+  { "ru": "Ребенок", "ee": "Laps", "en": "Child", "type": "People" },
+  { "ru": "Мужчина", "ee": "Mees", "en": "Man", "type": "People" },
+  { "ru": "Что (в объектном падеже)", "ee": "Mida", "en": "What", "type": "Abstract" },
+  { "ru": "Что-то", "ee": "Midagi", "en": "Something", "type": "Abstract" },
+  { "ru": "Какой", "ee": "Milline", "en": "Which / What kind of", "type": "Descriptions" },
+  { "ru": "Не", "ee": "Mitte", "en": "Not", "type": "Abstract" },
+  { "ru": "Ничего", "ee": "Mitte midagi", "en": "Nothing", "type": "Abstract" },
+  { "ru": "Загадка", "ee": "Mõistatus", "en": "Riddle", "type": "Abstract" },
+  { "ru": "Я играю", "ee": "Mängi/n", "en": "I play", "type": "Actions" },
+  { "ru": "Женщина", "ee": "Naine", "en": "Woman", "type": "People" },
+  { "ru": "Молодой", "ee": "Noor", "en": "Young", "type": "Descriptions" },
+  { "ru": "Я выгляжу", "ee": "Näe/n välja", "en": "I look like", "type": "Actions" },
+  { "ru": "Дядя", "ee": "Onu", "en": "Uncle", "type": "People" },
+  { "ru": "Госпожа", "ee": "Proua", "en": "Lady/Mrs", "type": "People" },
+  { "ru": "Глупый", "ee": "Rumal", "en": "Stupid", "type": "Descriptions" },
+  { "ru": "Дым", "ee": "Suits", "en": "Smoke", "type": "Objects" },
+  { "ru": "Большой", "ee": "Suur", "en": "Big", "type": "Descriptions" },
+  { "ru": "Умный", "ee": "Tark", "en": "Smart", "type": "Descriptions" },
+  { "ru": "Тетя", "ee": "Tädi", "en": "Aunt", "type": "People" },
+  { "ru": "Я наблюдаю", "ee": "Vaata/n pealt", "en": "I watch on", "type": "Actions" },
+  { "ru": "Старый", "ee": "Vana", "en": "Old", "type": "Descriptions" },
+  { "ru": "Бабушка", "ee": "Vanaema", "en": "Grandmother", "type": "People" },
+  { "ru": "Дедушка", "ee": "Vanaisa", "en": "Grandfather", "type": "People" },
+  { "ru": "Пословица", "ee": "Vanasõna", "en": "Proverb", "type": "Abstract" },
+  { "ru": "Родители", "ee": "Vanemad", "en": "Parents", "type": "People" },
+  { "ru": "Маленький", "ee": "Väike", "en": "Small", "type": "Descriptions" },
+  { "ru": "Вверх", "ee": "Üles", "en": "Up", "type": "Directions" },
+  { "ru": "Я даю", "ee": "Anna/n", "en": "I give", "type": "Actions" },
+  { "ru": "Число", "ee": "Arv", "en": "Number", "type": "Abstract" },
+  { "ru": "Я открываю", "ee": "Ava/n", "en": "I open", "type": "Actions" },
+  { "ru": "Плохой", "ee": "Halb", "en": "Bad", "type": "Descriptions" },
+  { "ru": "Интересный", "ee": "Huvitav", "en": "Interesting", "type": "Descriptions" },
+  { "ru": "Погода", "ee": "Ilm", "en": "Weather", "type": "Nature" },
+  { "ru": "Я гуляю", "ee": "Jaluta/n", "en": "I walk", "type": "Actions" },
+  { "ru": "Я рисую", "ee": "Joonista/n", "en": "I draw", "type": "Actions" },
+  { "ru": "С/Вместе", "ee": "Kaasa", "en": "With/Along", "type": "Abstract" },
+  { "ru": "Я дарю", "ee": "Kingi/n", "en": "I gift", "type": "Actions" },
+  { "ru": "Письмо", "ee": "Kiri", "en": "Letter", "type": "Objects" },
+  { "ru": "Раз/Порядок", "ee": "Kord", "en": "Time/Order", "type": "Abstract" },
+  { "ru": "Сколько", "ee": "Kui palju", "en": "How much", "type": "Abstract" },
+  { "ru": "Я зову", "ee": "Kutsu/n", "en": "I call/invite", "type": "Actions" },
+  { "ru": "Песня", "ee": "Laul", "en": "Song", "type": "Art" },
+  { "ru": "Я пою", "ee": "Laula/n", "en": "I sing", "type": "Actions" },
+  { "ru": "Минус", "ee": "Miinus", "en": "Minus", "type": "Abstract" },
+  { "ru": "Я покупаю", "ee": "Osta/n", "en": "I buy", "type": "Actions" },
+  { "ru": "Много", "ee": "Palju", "en": "Much/Many", "type": "Descriptions" },
+  { "ru": "Картинка", "ee": "Pilt", "en": "Picture", "type": "Objects" },
+  { "ru": "Карандаш", "ee": "Pliiats", "en": "Pencil", "type": "Objects" },
+  { "ru": "Плюс", "ee": "Pluss", "en": "Plus", "type": "Abstract" },
+  { "ru": "Книга", "ee": "Raamat", "en": "Book", "type": "Objects" },
+  { "ru": "Я отправляю", "ee": "Saada/n", "en": "I send", "type": "Actions" },
+  { "ru": "Ручка", "ee": "Sulepea", "en": "Pen", "type": "Objects" },
+  { "ru": "В комнате", "ee": "Toas", "en": "In the room", "type": "Places" },
+  { "ru": "Я приношу", "ee": "Too/n", "en": "I bring", "type": "Actions" },
+  { "ru": "Я работаю", "ee": "Tööta/n", "en": "I work", "type": "Actions" },
+  { "ru": "Новый", "ee": "Uus", "en": "New", "type": "Descriptions" },
+  { "ru": "Ложный", "ee": "Vale", "en": "False/Wrong", "type": "Descriptions" },
+  { "ru": "Я беру", "ee": "Võta/n", "en": "I take", "type": "Actions" },
+  { "ru": "Правильный", "ee": "Õige", "en": "Right/Correct", "type": "Descriptions" },
+  { "ru": "Учитель", "ee": "Õpetaja", "en": "Teacher", "type": "People" },
+  { "ru": "Я учу", "ee": "Õpeta/n", "en": "I teach", "type": "Actions" },
+  { "ru": "Учебник", "ee": "Õpik", "en": "Textbook", "type": "Objects" },
+  { "ru": "Ученик", "ee": "Õpilane", "en": "Student", "type": "People" },
+  { "ru": "Только", "ee": "Ainult", "en": "Only", "type": "Abstract" },
+  { "ru": "Окно", "ee": "Aken", "en": "Window", "type": "Objects" },
+  { "ru": "Открыто", "ee": "Avatud", "en": "Open", "type": "Descriptions" },
+  { "ru": "Голос", "ee": "Hääl", "en": "Voice", "type": "Abstract" },
+  { "ru": "Красиво", "ee": "Ilusti", "en": "Beautifully", "type": "Descriptions" },
+  { "ru": "Коробка", "ee": "Karp", "en": "Box", "type": "Objects" },
+  { "ru": "Закрыто", "ee": "Kinni", "en": "Closed", "type": "Descriptions" },
+  { "ru": "Открыто", "ee": "Lahti", "en": "Open/Loose", "type": "Descriptions" },
+  { "ru": "Птица", "ee": "Lind", "en": "Bird", "type": "Animals" },
+  { "ru": "Я закрываю", "ee": "Pane/n kinni", "en": "I close", "type": "Actions" },
+  { "ru": "Радостный", "ee": "Rõõmus", "en": "Joyful", "type": "Emotions" },
+  { "ru": "Сигарета", "ee": "Sigarett", "en": "Cigarette", "type": "Objects" },
+  { "ru": "Мгновение", "ee": "Silmapilk", "en": "Moment", "type": "Time" },
+  { "ru": "Внутрь", "ee": "Sisse", "en": "In/Inside", "type": "Directions" },
+  { "ru": "Закрыто", "ee": "Suletud", "en": "Closed", "type": "Descriptions" },
+  { "ru": "Я открываю", "ee": "Tee/n lahti", "en": "I open", "type": "Actions" },
+  { "ru": "Крылья", "ee": "Tiivad", "en": "Wings", "type": "Objects" },
+  { "ru": "Спички", "ee": "Tikud", "en": "Matches", "type": "Objects" },
+  { "ru": "Дверь", "ee": "Uks", "en": "Door", "type": "Objects" },
+  { "ru": "Медленно", "ee": "Aeglaselt", "en": "Slowly", "type": "Descriptions" },
+  { "ru": "Начальная школа", "ee": "Algkool", "en": "Primary school", "type": "Places" },
+  { "ru": "Машина", "ee": "Auto", "en": "Car", "type": "Objects" },
+  { "ru": "Больной", "ee": "Haige", "en": "Sick", "type": "Descriptions" },
+  { "ru": "Упражнение", "ee": "Harjutus", "en": "Exercise", "type": "Abstract" },
+  { "ru": "Здание", "ee": "Hoone", "en": "Building", "type": "Places" },
+  { "ru": "Господин", "ee": "Härra", "en": "Sir/Mr", "type": "People" },
+  { "ru": "Быстро", "ee": "Kiiresti", "en": "Fast", "type": "Descriptions" },
+  { "ru": "Писатель", "ee": "Kirjanik", "en": "Writer", "type": "People" },
+  { "ru": "Близко", "ee": "Lähedal", "en": "Near", "type": "Directions" },
+  { "ru": "В деревне/На земле", "ee": "Maal", "en": "In the country", "type": "Places" },
+  { "ru": "Тяжелый", "ee": "Raske", "en": "Heavy/Difficult", "type": "Descriptions" },
+  { "ru": "Роман", "ee": "Romaan", "en": "Novel", "type": "Art" },
+  { "ru": "Здоровый/Целый", "ee": "Terve", "en": "Healthy/Whole", "type": "Descriptions" },
+  { "ru": "Здоровье", "ee": "Tervis", "en": "Health", "type": "Abstract" },
+  { "ru": "Настроение", "ee": "Tuju", "en": "Mood", "type": "Emotions" },
+  { "ru": "На работе", "ee": "Tööl", "en": "At work", "type": "Places" },
+  { "ru": "Готов", "ee": "Valmis", "en": "Ready", "type": "Descriptions" },
+  { "ru": "Скоро", "ee": "Varsti", "en": "Soon", "type": "Time" },
+  { "ru": "Снаружи", "ee": "Väljas", "en": "Outside", "type": "Places" },
+  { "ru": "Университет", "ee": "Ülikool", "en": "University", "type": "Places" },
+  { "ru": "Всегда", "ee": "Alati", "en": "Always", "type": "Time" },
+  { "ru": "Директор", "ee": "Direktor", "en": "Director", "type": "People" },
+  { "ru": "Имя", "ee": "Eesnimi", "en": "First name", "type": "Abstract" },
+  { "ru": "Жизнь", "ee": "Elu", "en": "Life", "type": "Abstract" },
+  { "ru": "Место жительства", "ee": "Elukoht", "en": "Residence", "type": "Places" },
+  { "ru": "Скучный", "ee": "Igav", "en": "Boring", "type": "Descriptions" },
+  { "ru": "Рассказ", "ee": "Jutt", "en": "Story", "type": "Art" },
+  { "ru": "Книга рассказов", "ee": "Juturaamat", "en": "Storybook", "type": "Objects" },
+  { "ru": "К сожалению", "ee": "Kahjuks", "en": "Unfortunately", "type": "Phrases" },
+  { "ru": "Сломанный", "ee": "Katki", "en": "Broken", "type": "Descriptions" },
+  { "ru": "Далеко", "ee": "Kaugel", "en": "Far", "type": "Directions" },
+  { "ru": "Легкий", "ee": "Kerge", "en": "Light/Easy", "type": "Descriptions" },
+  { "ru": "Стекло/Стакан", "ee": "Klaas", "en": "Glass", "type": "Objects" },
+  { "ru": "Здание школы", "ee": "Koolimaja", "en": "Schoolhouse", "type": "Places" },
+  { "ru": "Королевство", "ee": "Kuningriik", "en": "Kingdom", "type": "Places" },
+  { "ru": "Художник", "ee": "Kunstnik", "en": "Artist", "type": "People" },
+  { "ru": "Замок/Дворец", "ee": "Loss", "en": "Castle", "type": "Places" },
+  { "ru": "Соседняя страна", "ee": "Naabermaa", "en": "Neighboring country", "type": "Places" },
+  { "ru": "Столица", "ee": "Pealinn", "en": "Capital", "type": "Places" },
+  { "ru": "Главная улица", "ee": "Peatänav", "en": "Main street", "type": "Places" },
+  { "ru": "Фамилия", "ee": "Perekonnanimi", "en": "Surname", "type": "Abstract" },
+  { "ru": "Сад", "ee": "Aed", "en": "Garden", "type": "Places" },
+  { "ru": "Печь", "ee": "Ahi", "en": "Oven", "type": "Objects" },
+  { "ru": "Под", "ee": "All", "en": "Under", "type": "Directions" },
+  { "ru": "Вниз", "ee": "Alla", "en": "Down", "type": "Directions" },
+  { "ru": "Я располагаюсь", "ee": "Asetse/n", "en": "I am situated", "type": "Actions" },
+  { "ru": "Перед", "ee": "Ees", "en": "In front", "type": "Directions" },
+  { "ru": "Из-за / Перед", "ee": "Eest", "en": "From in front of", "type": "Directions" },
+  { "ru": "У / Около", "ee": "Juures", "en": "At / By", "type": "Directions" },
+  { "ru": "Река", "ee": "Jõgi", "en": "River", "type": "Nature" },
+  { "ru": "Я попадаю под (машину)", "ee": "Jää/n alla", "en": "I get run over", "type": "Actions" },
+  { "ru": "Шкаф", "ee": "Kapp", "en": "Cabinet", "type": "Objects" },
+  { "ru": "Я расту", "ee": "Kasva/n", "en": "I grow", "type": "Actions" },
+  { "ru": "Посреди", "ee": "Keskel", "en": "In the middle of", "type": "Directions" },
+  { "ru": "Я качаюсь", "ee": "Kiiku/n", "en": "I swing", "type": "Actions" },
+  { "ru": "Над", "ee": "Kohal", "en": "Above", "type": "Directions" },
+  { "ru": "Комплимент", "ee": "Kompliment", "en": "Compliment", "type": "Abstract" },
+  { "ru": "Высокий", "ee": "Kõrge", "en": "High / Tall", "type": "Descriptions" },
+  { "ru": "Рядом", "ee": "Kõrval", "en": "Beside", "type": "Directions" },
+  { "ru": "Лампа", "ee": "Lamp", "en": "Lamp", "type": "Objects" },
+  { "ru": "Стол", "ee": "Laud", "en": "Table", "type": "Objects" },
+  { "ru": "Я лечу", "ee": "Lenda/n", "en": "I fly", "type": "Actions" },
+  { "ru": "Самолет", "ee": "Lennuk", "en": "Airplane", "type": "Objects" },
+  { "ru": "Цветы", "ee": "Lilled", "en": "Flowers", "type": "Nature" },
+  { "ru": "Через / Сквозь", "ee": "Läbi", "en": "Through", "type": "Directions" },
+  { "ru": "Дом", "ee": "Maja", "en": "House", "type": "Places" },
+  { "ru": "Лес", "ee": "Mets", "en": "Forest", "type": "Nature" },
+  { "ru": "Иначе / Обычно", "ee": "Muidu", "en": "Otherwise", "type": "Abstract" },
+  { "ru": "В углу", "ee": "Nurgas", "en": "In the corner", "type": "Directions" },
+  { "ru": "Белка", "ee": "Orav", "en": "Squirrel", "type": "Animals" },
+  { "ru": "На конце / Сверху", "ee": "Otsas", "en": "On top of / Finished", "type": "Directions" },
+  { "ru": "Лодка", "ee": "Paat", "en": "Boat", "type": "Objects" },
+  { "ru": "На", "ee": "Peal", "en": "On", "type": "Directions" },
+  { "ru": "Дерево", "ee": "Puu", "en": "Tree", "type": "Nature" },
+  { "ru": "Полка", "ee": "Riiul", "en": "Shelf", "type": "Objects" },
+  { "ru": "Я вишу", "ee": "Ripu/n", "en": "I hang", "type": "Actions" },
+  { "ru": "Быстро", "ee": "Ruttu", "en": "Quickly", "type": "Descriptions" },
+  { "ru": "Внутри", "ee": "Sees", "en": "Inside", "type": "Directions" },
+  { "ru": "Стена", "ee": "Sein", "en": "Wall", "type": "Objects" },
+  { "ru": "Мост", "ee": "Sild", "en": "Bridge", "type": "Places" },
+  { "ru": "За / Позади", "ee": "Taga", "en": "Behind", "type": "Directions" },
+  { "ru": "Стул", "ee": "Tool", "en": "Chair", "type": "Objects" },
+  { "ru": "Между", "ee": "Vahel", "en": "Between", "type": "Directions" },
+  { "ru": "Ковер", "ee": "Vaip", "en": "Carpet", "type": "Objects" },
+  { "ru": "Кровать", "ee": "Voodi", "en": "Bed", "type": "Objects" },
+  { "ru": "Наружу", "ee": "Välja", "en": "Out", "type": "Directions" },
+  { "ru": "У края / Возле", "ee": "Ääres", "en": "By the edge", "type": "Directions" },
+  { "ru": "Через / Над", "ee": "Üle", "en": "Over / Across", "type": "Directions" },
+  { "ru": "Сначала", "ee": "Algul", "en": "At first", "type": "Time" },
+  { "ru": "Я обитаю", "ee": "Elutse/n", "en": "I inhabit", "type": "Actions" },
+  { "ru": "Серый", "ee": "Hall", "en": "Grey", "type": "Descriptions" },
+  { "ru": "Светлый", "ee": "Hele", "en": "Light (color)", "type": "Descriptions" },
+  { "ru": "Голубой", "ee": "Helesinine", "en": "Light blue", "type": "Descriptions" },
+  { "ru": "Позже", "ee": "Hiljem", "en": "Later", "type": "Time" },
+  { "ru": "Серебро", "ee": "Hõbe", "en": "Silver", "type": "Objects" },
+  { "ru": "Серебристо-серый", "ee": "Hõbehall", "en": "Silver-grey", "type": "Descriptions" },
+  { "ru": "Рыба", "ee": "Kala", "en": "Fish", "type": "Animals" },
+  { "ru": "Я дарю", "ee": "Kingi/n", "en": "I gift", "type": "Actions" },
+  { "ru": "Письмо", "ee": "Kiri", "en": "Letter", "type": "Objects" },
+  { "ru": "Пестрый", "ee": "Kirju", "en": "Variegated / Colorful", "type": "Descriptions" },
+  { "ru": "Желтый", "ee": "Kollane", "en": "Yellow", "type": "Descriptions" },
+  { "ru": "Если / Когда", "ee": "Kui", "en": "If / When", "type": "Conjunctions" },
+  { "ru": "Но / Однако", "ee": "Kuid", "en": "But", "type": "Conjunctions" },
+  { "ru": "Золотая рыбка", "ee": "Kuldkala", "en": "Goldfish", "type": "Animals" },
+  { "ru": "Я хожу", "ee": "Käi/n", "en": "I go / attend", "type": "Actions" },
+  { "ru": "Корова", "ee": "Lehm", "en": "Cow", "type": "Animals" },
+  { "ru": "Цветок", "ee": "Lill", "en": "Flower", "type": "Nature" },
+  { "ru": "Флаг", "ee": "Lipp", "en": "Flag", "type": "Objects" },
+  { "ru": "Животное", "ee": "Loom", "en": "Animal", "type": "Animals" },
+  { "ru": "Снег", "ee": "Lumi", "en": "Snow", "type": "Nature" },
+  { "ru": "В конце концов", "ee": "Lõpuks", "en": "Finally", "type": "Time" },
+  { "ru": "Клубника", "ee": "Maasikas", "en": "Strawberry", "type": "Food" },
+  { "ru": "Сладкий", "ee": "Magus", "en": "Sweet", "type": "Descriptions" },
+  { "ru": "Я пробую на вкус", "ee": "Maitse/n", "en": "I taste", "type": "Actions" },
+  { "ru": "Мед", "ee": "Mesi", "en": "Honey", "type": "Food" },
+  { "ru": "Пчела", "ee": "Mesilane", "en": "Bee", "type": "Animals" },
+  { "ru": "Когда", "ee": "Millal", "en": "When", "type": "Time" },
+  { "ru": "Какой / Какого вида", "ee": "Missugune", "en": "What kind of", "type": "Descriptions" },
+  { "ru": "Черный", "ee": "Must", "en": "Black", "type": "Descriptions" },
+  { "ru": "Я понимаю / разгадываю", "ee": "Mõista/n", "en": "I understand", "type": "Actions" },
+  { "ru": "Бумага", "ee": "Paber", "en": "Paper", "type": "Objects" },
+  { "ru": "Молоко", "ee": "Piim", "en": "Milk", "type": "Food" },
+  { "ru": "Коричневый", "ee": "Pruun", "en": "Brown", "type": "Descriptions" },
+  { "ru": "Красный", "ee": "Punane", "en": "Red", "type": "Descriptions" },
+  { "ru": "Зеленый", "ee": "Roheline", "en": "Green", "type": "Descriptions" },
+  { "ru": "Трава", "ee": "Rohi", "en": "Grass", "type": "Nature" },
+  { "ru": "Роза", "ee": "Roos", "en": "Rose", "type": "Nature" },
+  { "ru": "Радостный", "ee": "Rõõmus", "en": "Joyful", "type": "Emotions" },
+  { "ru": "Я прибываю", "ee": "Saabu/n", "en": "I arrive", "type": "Actions" },
+  { "ru": "Тебя", "ee": "Sind", "en": "You (object)", "type": "People" },
+  { "ru": "Сине-черно-белый", "ee": "Sini-must-valge", "en": "Blue-black-white", "type": "Descriptions" },
+  { "ru": "Синий", "ee": "Sinine", "en": "Blue", "type": "Descriptions" },
+  { "ru": "Небо", "ee": "Taevas", "en": "Sky", "type": "Nature" },
+  { "ru": "Вверх ногами", "ee": "Tagurpidi", "en": "Upside down", "type": "Directions" },
+  { "ru": "Ему / Ей", "ee": "Talle", "en": "To him / her", "type": "People" },
+  { "ru": "Я приветствую", "ee": "Tervita/n", "en": "I greet", "type": "Actions" },
+  { "ru": "Темный", "ee": "Tume", "en": "Dark", "type": "Descriptions" },
+  { "ru": "Темно-красный", "ee": "Tumepunane", "en": "Dark red", "type": "Descriptions" },
+  { "ru": "Спасибо / Благодаря", "ee": "Tänu", "en": "Thanks / Due to", "type": "Phrases" },
+  { "ru": "Лишь / Только", "ee": "Vaid", "en": "Only", "type": "Abstract" },
+  { "ru": "Белый", "ee": "Valge", "en": "White", "type": "Descriptions" },
+  { "ru": "В воде", "ee": "Vees", "en": "In water", "type": "Nature" },
+  { "ru": "Кровь", "ee": "Veri", "en": "Blood", "type": "Nature" },
+  { "ru": "Вода", "ee": "Vesi", "en": "Water", "type": "Nature" },
+  { "ru": "Я могу", "ee": "Või/n", "en": "I may / can", "type": "Actions" },
+  { "ru": "Рак", "ee": "Vähk", "en": "Crayfish", "type": "Animals" },
+  { "ru": "Снаружи", "ee": "Väljas", "en": "Outside", "type": "Places" },
+  { "ru": "Цвет", "ee": "Värv", "en": "Color", "type": "Descriptions" },
+  { "ru": "Угрожающий", "ee": "Ähvardav", "en": "Threatening", "type": "Descriptions" },
+  { "ru": "Год", "ee": "Aasta", "en": "Year", "type": "Time" },
+  { "ru": "Газета", "ee": "Ajaleht", "en": "Newspaper", "type": "Objects" },
+  { "ru": "Число / Количество", "ee": "Arv", "en": "Number", "type": "Abstract" },
+  { "ru": "Я думаю / считаю", "ee": "Arva/n", "en": "I think / guess", "type": "Actions" },
+  { "ru": "Вероятно", "ee": "Arvatavasti", "en": "Probably", "type": "Abstract" },
+  { "ru": "Автобусный билет", "ee": "Bussipilet", "en": "Bus ticket", "type": "Objects" },
+  { "ru": "Доллар", "ee": "Dollar", "en": "Dollar", "type": "Objects" },
+  { "ru": "Я ошибаюсь / теряюсь", "ee": "Eksi/n", "en": "I err / get lost", "type": "Actions" },
+  { "ru": "Я длясь / продолжаюсь", "ee": "Kesta/n", "en": "I last", "type": "Actions" },
+  { "ru": "Вместе", "ee": "Koos", "en": "Together", "type": "Abstract" },
+  { "ru": "Концерт", "ee": "Kontsert", "en": "Concert", "type": "Art" },
+  { "ru": "Крона", "ee": "Kroon", "en": "Crown / Kroon", "type": "Objects" },
+  { "ru": "Ноль", "ee": "Null", "en": "Zero", "type": "Abstract" },
+  { "ru": "Курс", "ee": "Kursus", "en": "Course", "type": "Education" },
+  { "ru": "Лекция", "ee": "Loeng", "en": "Lecture", "type": "Education" },
+  { "ru": "Я плачу", "ee": "Maksa/n", "en": "I pay", "type": "Actions" },
+  { "ru": "Минута", "ee": "Minut", "en": "Minute", "type": "Time" },
+  { "ru": "Несколько", "ee": "Mitu", "en": "Several", "type": "Abstract" },
+  { "ru": "Юность", "ee": "Noorus", "en": "Youth", "type": "Abstract" },
+  { "ru": "Номер", "ee": "Number", "en": "Number", "type": "Abstract" },
+  { "ru": "Четный", "ee": "Paaris", "en": "Even (number)", "type": "Descriptions" },
+  { "ru": "Нечетный", "ee": "Paaritu", "en": "Odd (number)", "type": "Descriptions" },
+  { "ru": "Я свечу (о солнце)", "ee": "Paista/n", "en": "I shine / seem", "type": "Actions" },
+  { "ru": "Половина", "ee": "Pool", "en": "Half", "type": "Abstract" },
+  { "ru": "Полтора", "ee": "Poolteist", "en": "One and a half", "type": "Abstract" },
+  { "ru": "Профессор", "ee": "Professor", "en": "Professor", "type": "People" },
+  { "ru": "Цент", "ee": "Sent", "en": "Cent", "type": "Objects" },
+  { "ru": "Слово", "ee": "Sõna", "en": "Word", "type": "Abstract" },
+  { "ru": "Журнал", "ee": "Žurnaal", "en": "Journal / Magazine", "type": "Objects" },
+  { "ru": "Телефон", "ee": "Telefon", "en": "Telephone", "type": "Objects" },
+  { "ru": "Час", "ee": "Tund", "en": "Hour / Lesson", "type": "Time" },
+  { "ru": "Полный", "ee": "Täis", "en": "Full", "type": "Descriptions" },
+  { "ru": "Время", "ee": "Aeg", "en": "Time", "type": "Time" },
+  { "ru": "Я начинаю", "ee": "Alga/n", "en": "I begin", "type": "Actions" },
+  { "ru": "Профессия / Должность", "ee": "Amet", "en": "Profession", "type": "People" },
+  { "ru": "Апрель", "ee": "Aprill", "en": "April", "type": "Time" },
+  { "ru": "Август", "ee": "August", "en": "August", "type": "Time" },
+  { "ru": "Декабрь", "ee": "Detsember", "en": "December", "type": "Time" },
+  { "ru": "Первый", "ee": "Esimene", "en": "First", "type": "Time" },
+  { "ru": "Лошадь", "ee": "Hobune", "en": "Horse", "type": "Animals" },
+  { "ru": "Январь", "ee": "Jaanuar", "en": "January", "type": "Time" },
+  { "ru": "Июль", "ee": "Juuli", "en": "July", "type": "Time" },
+  { "ru": "Июнь", "ee": "Juuni", "en": "June", "type": "Time" },
+  { "ru": "Я остаюсь", "ee": "Jää/n", "en": "I stay", "type": "Actions" },
+  { "ru": "Восьмой", "ee": "Kaheksas", "en": "Eighth", "type": "Time" },
+  { "ru": "Двенадцатый", "ee": "Kaheteistkümnes", "en": "Twelfth", "type": "Time" },
+  { "ru": "Часы / Время", "ee": "Kell", "en": "Clock / O'clock", "type": "Time" },
+  { "ru": "Третий", "ee": "Kolmas", "en": "Third", "type": "Time" },
+  { "ru": "Колесо", "ee": "Ratas", "en": "Wheel", "type": "Objects" },
+  { "ru": "Поезд", "ee": "Rong", "en": "Train", "type": "Objects" },
+  { "ru": "Я получаю / становлюсь", "ee": "Saa/n", "en": "I get / can", "type": "Actions" },
+  { "ru": "Седьмой", "ee": "Seitsmes", "en": "Seventh", "type": "Time" },
+  { "ru": "Сентябрь", "ee": "September", "en": "September", "type": "Time" },
+  { "ru": "Рот", "ee": "Suu", "en": "Mouth", "type": "Objects" },
+  { "ru": "Рожденный", "ee": "Sündinud", "en": "Born", "type": "Time" },
+  { "ru": "День рождения", "ee": "Sünnipäev", "en": "Birthday", "type": "Time" },
+  { "ru": "Второй / Другой", "ee": "Teine", "en": "Second / Other", "type": "Time" },
+  { "ru": "Я перевожу", "ee": "Tõlgi/n", "en": "I translate", "type": "Actions" },
+  { "ru": "Я встаю / поднимаюсь", "ee": "Tõuse/n", "en": "I rise", "type": "Actions" },
+  { "ru": "Точно", "ee": "Täpselt", "en": "Exactly", "type": "Descriptions" },
+  { "ru": "Работа", "ee": "Töö", "en": "Work", "type": "Activities" },
+  { "ru": "Рабочий день", "ee": "Tööpäev", "en": "Workday", "type": "Time" },
+  { "ru": "Я забываю", "ee": "Unusta/n", "en": "I forget", "type": "Actions" },
+  { "ru": "Перерыв / Каникулы", "ee": "Vaheaeg", "en": "Break / Vacation", "type": "Time" },
+  { "ru": "Телега / Повозка", "ee": "Vanker", "en": "Wagon", "type": "Objects" },
+  { "ru": "Февраль", "ee": "Veebruar", "en": "February", "type": "Time" },
+  { "ru": "Четверть", "ee": "Veerand", "en": "Quarter", "type": "Time" },
+  { "ru": "Пятый", "ee": "Viies", "en": "Fifth", "type": "Time" },
+  { "ru": "Девятый", "ee": "Üheksas", "en": "Ninth", "type": "Time" },
+  { "ru": "Одиннадцатый", "ee": "Üheteistkümnes", "en": "Eleventh", "type": "Time" },
+  { "ru": "Я просыпаюсь", "ee": "Ärka/n", "en": "I wake up", "type": "Actions" },
+  { "ru": "Ночью", "ee": "Öösel", "en": "At night", "type": "Time" },
+  { "ru": "Настроение", "ee": "Tuju", "en": "Mood", "type": "Emotions" },
+  { "ru": "Часто", "ee": "Tihti", "en": "Often", "type": "Time" },
+  { "ru": "Редко", "ee": "Harva", "en": "Rarely", "type": "Time" },
+  { "ru": "Месяц", "ee": "Kuu", "en": "Month / Moon", "type": "Time" },
+  { "ru": "Я происхожу", "ee": "Toimu/n", "en": "I take place", "type": "Actions" },
+  { "ru": "Бог", "ee": "Jumal", "en": "God", "type": "Abstract" },
+  { "ru": "Это означает", "ee": "Tähenda/b", "en": "It means", "type": "Actions" },
+  { "ru": "Обезьяна", "ee": "Ahv", "en": "Monkey", "type": "Animals" },
+  { "ru": "Любовь", "ee": "Armastus", "en": "Love", "type": "Emotions" },
+  { "ru": "Представление", "ee": "Etendus", "en": "Performance", "type": "Art" },
+  { "ru": "Я бросаю", "ee": "Heida/n", "en": "I throw", "type": "Actions" },
+  { "ru": "Утро", "ee": "Hommik", "en": "Morning", "type": "Time" },
+  { "ru": "Утром", "ee": "Hommikul", "en": "In the morning", "type": "Time" },
+  { "ru": "Я спотыкаюсь", "ee": "Komista/n", "en": "I stumble", "type": "Actions" },
+  { "ru": "Я убираю", "ee": "Korista/n", "en": "I clean up", "type": "Actions" },
+  { "ru": "Как у него дела?", "ee": "Kuidas tal läheb?", "en": "How is he doing?", "type": "Phrases" },
+  { "ru": "Я падаю", "ee": "Kuku/n", "en": "I fall", "type": "Actions" },
+  { "ru": "Тротуар", "ee": "Kõnnitee", "en": "Sidewalk", "type": "Objects" },
+  { "ru": "Дела идут хорошо", "ee": "Käsi käib hästi", "en": "Things are going well", "type": "Phrases" },
+  { "ru": "Я ухожу", "ee": "Lahku/n", "en": "I leave", "type": "Actions" },
+  { "ru": "Ленивый", "ee": "Laisk", "en": "Lazy", "type": "Descriptions" },
+  { "ru": "Птичка", "ee": "Linnuke", "en": "Little bird", "type": "Animals" },
+  { "ru": "Я надеюсь", "ee": "Looda/n", "en": "I hope", "type": "Actions" },
+  { "ru": "Я приближаюсь", "ee": "Lähene/n", "en": "I approach", "type": "Actions" },
+  { "ru": "Трава", "ee": "Muru", "en": "Grass", "type": "Nature" },
+  { "ru": "Музыка", "ee": "Muusika", "en": "Music", "type": "Art" },
+  { "ru": "Ветка", "ee": "Oks", "en": "Branch", "type": "Nature" },
+  { "ru": "Парк", "ee": "Park", "en": "Park", "type": "Places" },
+  { "ru": "Скамейка", "ee": "Pink", "en": "Bench", "type": "Objects" },
+  { "ru": "Мусорное ведро", "ee": "Prügikast", "en": "Trash can", "type": "Objects" },
+  { "ru": "Пол", "ee": "Põrand", "en": "Floor", "type": "Objects" },
+  { "ru": "Воскресенье", "ee": "Pühapäev", "en": "Sunday", "type": "Time" },
+  { "ru": "Я вешаю", "ee": "Riputa/n", "en": "I hang", "type": "Actions" },
+  { "ru": "Судьба", "ee": "Saatus", "en": "Fate", "type": "Abstract" },
+  { "ru": "Спорт", "ee": "Sport", "en": "Sport", "type": "Activities" },
+  { "ru": "Направление", "ee": "Suund", "en": "Direction", "type": "Abstract" },
+  { "ru": "Друг", "ee": "Sõber", "en": "Friend", "type": "People" },
+  { "ru": "Я сочувствую", "ee": "Tunne/n kaasa", "en": "I sympathize", "type": "Emotions" },
+  { "ru": "Благодарный", "ee": "Tänulik", "en": "Grateful", "type": "Descriptions" },
+  { "ru": "Свободный", "ee": "Vaba", "en": "Free", "type": "Descriptions" },
+  { "ru": "Я бросаю", "ee": "Viska/n", "en": "I throw", "type": "Actions" },
+  { "ru": "Гимнастика", "ee": "Võimlemine", "en": "Gymnastics", "type": "Activities" },
+  { "ru": "Несчастье", "ee": "Õnnetus", "en": "Accident", "type": "Abstract" },
+  { "ru": "Я сдаюсь", "ee": "Alistu/n", "en": "I surrender", "type": "Actions" },
+  { "ru": "До свидания", "ee": "Head aega", "en": "Goodbye", "type": "Phrases" },
+  { "ru": "Волк", "ee": "Hunt", "en": "Wolf", "type": "Animals" },
+  { "ru": "Заинтересованный", "ee": "Huvitatud", "en": "Interested", "type": "Descriptions" },
+  { "ru": "Некрасивый", "ee": "Inetu", "en": "Ugly", "type": "Descriptions" },
+  { "ru": "Лёд", "ee": "Jää", "en": "Ice", "type": "Nature" },
+  { "ru": "Осколок", "ee": "Kild", "en": "Shard", "type": "Objects" },
+  { "ru": "Дыра", "ee": "Auk", "en": "Hole", "type": "Objects" },
+  { "ru": "Эстония", "ee": "Eesti", "en": "Estonia", "type": "Places" },
+  { "ru": "Фильм", "ee": "Film", "en": "Film", "type": "Art" },
+  { "ru": "Гусь", "ee": "Hani", "en": "Goose", "type": "Animals" },
+  { "ru": "Я прыгаю", "ee": "Hüppa/n", "en": "I jump", "type": "Actions" },
+  { "ru": "Я бегу", "ee": "Jookse/n", "en": "I run", "type": "Actions" },
+  { "ru": "Шкаф", "ee": "Kapp", "en": "Cabinet", "type": "Objects" },
+  { "ru": "Литература", "ee": "Kirjandus", "en": "Literature", "type": "Art" },
+  { "ru": "Школа", "ee": "Kool", "en": "School", "type": "Places" },
+  { "ru": "Коридор", "ee": "Koridor", "en": "Corridor", "type": "Places" },
+  { "ru": "Искусство", "ee": "Kunst", "en": "Art", "type": "Art" },
+  { "ru": "Рука", "ee": "Käsi", "en": "Hand", "type": "Objects" },
+  { "ru": "Визит", "ee": "Külaskäik", "en": "Visit", "type": "Activities" },
+  { "ru": "Город", "ee": "Linn", "en": "City", "type": "Places" },
+  { "ru": "Море", "ee": "Meri", "en": "Sea", "type": "Nature" },
+  { "ru": "Шум", "ee": "Müra", "en": "Noise", "type": "Abstract" },
+  { "ru": "Кожа", "ee": "Nahk", "en": "Skin", "type": "Objects" },
+  { "ru": "Праздник", "ee": "Pidu", "en": "Party", "type": "Activities" },
+  { "ru": "Магазин", "ee": "Pood", "en": "Shop", "type": "Places" },
+  { "ru": "Портфель", "ee": "Portfell", "en": "Briefcase", "type": "Objects" },
+  { "ru": "Народ", "ee": "Rahvas", "en": "People", "type": "People" },
+  { "ru": "Рим", "ee": "Rooma", "en": "Rome", "type": "Places" },
+  { "ru": "Швеция", "ee": "Rootsi", "en": "Sweden", "type": "Places" },
+  { "ru": "Спина", "ee": "Selg", "en": "Back", "type": "Objects" },
+  { "ru": "Тёплый", "ee": "Soe", "en": "Warm", "type": "Descriptions" },
+  { "ru": "Финляндия", "ee": "Soome", "en": "Finland", "type": "Places" },
+  { "ru": "Карман", "ee": "Tasku", "en": "Pocket", "type": "Objects" },
+  { "ru": "Дорога", "ee": "Tee", "en": "Road", "type": "Places" },
+  { "ru": "Добро пожаловать", "ee": "Teretulnud", "en": "Welcome", "type": "Phrases" },
+  { "ru": "Огонь", "ee": "Tuli", "en": "Fire", "type": "Nature" },
+  { "ru": "Комната", "ee": "Tuba", "en": "Room", "type": "Places" },
+  { "ru": "Туман", "ee": "Udu", "en": "Fog", "type": "Nature" },
+  { "ru": "Я плаваю", "ee": "Uju/n", "en": "I swim", "type": "Actions" },
+  { "ru": "Я наливаю", "ee": "Vala/n", "en": "I pour", "type": "Actions" },
+  { "ru": "Вода", "ee": "Vesi", "en": "Water", "type": "Nature" },
+  { "ru": "Я несу", "ee": "Vii/n", "en": "I carry", "type": "Actions" },
+  { "ru": "Масло", "ee": "Õli", "en": "Oil", "type": "Food" },
+  { "ru": "Помощь", "ee": "Abi", "en": "Help", "type": "Abstract" },
+  { "ru": "Жадность", "ee": "Ahnus", "en": "Greed", "type": "Abstract" },
+  { "ru": "Обезьяна", "ee": "Ahv", "en": "Monkey", "type": "Animals" },
+  { "ru": "Любовь", "ee": "Armastus", "en": "Love", "type": "Emotions" },
+  { "ru": "Представление", "ee": "Etendus", "en": "Performance", "type": "Art" },
+  { "ru": "Утро", "ee": "Hommik", "en": "Morning", "type": "Time" },
+  { "ru": "Сила", "ee": "Jõud", "en": "Force", "type": "Abstract" },
+  { "ru": "Капитан", "ee": "Kapten", "en": "Captain", "type": "People" },
+  { "ru": "Кино", "ee": "Kino", "en": "Cinema", "type": "Places" },
+  { "ru": "Знаменитый", "ee": "Kuulus", "en": "Famous", "type": "Descriptions" },
+  { "ru": "Корабль", "ee": "Laev", "en": "Ship", "type": "Objects" },
+  { "ru": "Обед/Юг", "ee": "Lõuna", "en": "Lunch/South", "type": "Time" },
+  { "ru": "Шутка", "ee": "Nali", "en": "Joke", "type": "Abstract" },
+  { "ru": "Беженец", "ee": "Pagulane", "en": "Refugee", "type": "People" },
+  { "ru": "Дно", "ee": "Põhi", "en": "Bottom", "type": "Abstract" },
+  { "ru": "Я понимаю", "ee": "Saa/n aru", "en": "I understand", "type": "Actions" },
+  { "ru": "Дружба", "ee": "Sõprus", "en": "Friendship", "type": "AbstKomistaract" },
+  { "ru": "Сердце", "ee": "Süda", "en": "Heart", "type": "Objects" },
+  { "ru": "Театр", "ee": "Teater", "en": "Theatre", "type": "Places" },
+  { "ru": "Деятельность", "ee": "Tegevus", "en": "Activity", "type": "Activities" },
+  { "ru": "Доброе утро", "ee": "Tere hommikust", "en": "Good morning", "type": "Phrases" },
+  { "ru": "Уставший", "ee": "Väsinud", "en": "Tired", "type": "Descriptions" },
+  { "ru": "Вечер", "ee": "Õhtu", "en": "Evening", "type": "Time" },
+  { "ru": "Связь", "ee": "Ühendus", "en": "Connection", "type": "Abstract" }
+
+
+        ];
+
+        const uniqueWords = Array.from(new Map(rawWords.map(item => [item.ru, item])).values());
+        let mastered = new Set(JSON.parse(localStorage.getItem('mastered')) || []);
+        let stats = { c: 0, m: 0, points: parseInt(localStorage.getItem('points')) || 0 };
+        let deck = [], nextRound = [], currentIdx = -1, qLang = 'ru', aLang = 'ee', style = 'flash', timerMax = 10, timeLeft = 10, timerInterval = null;
+
+        function save() { localStorage.setItem('mastered', JSON.stringify([...mastered])); localStorage.setItem('points', stats.points); }
+        function clearMastery() { if(confirm("Reset all progress?")) { mastered.clear(); stats.points = 0; save(); resetDeck(); } }
+
+        function updateProgress() {
+            const cat = document.getElementById('cat-filter').value;
+            const catWords = uniqueWords.filter(w => cat === 'all' || w.type === cat);
+            const masteredInCat = Array.from(mastered).filter(ru => {
+                const word = uniqueWords.find(w => w.ru === ru);
+                return cat === 'all' || (word && word.type === cat);
+            }).length;
+            const percent = catWords.length === 0 ? 0 : Math.round((masteredInCat / catWords.length) * 100);
+            document.getElementById('cat-percent').innerText = percent + '%';
+            document.getElementById('cat-bar').style.width = percent + '%';
+        }
+
+        function resetDeck() {
+            const cat = document.getElementById('cat-filter').value;
+            deck = uniqueWords.filter(w => (cat === 'all' || w.type === cat) && !mastered.has(w.ru));
+            nextRound = []; nextWord(); updateProgress();
+        }
+
+        function nextWord() {
+            if (deck.length === 0) {
+                if (nextRound.length > 0) { deck = [...nextRound]; nextRound = []; alert("New Round: Mistakes"); }
+                else { alert("Mastered all current words!"); return; }
+            }
+            currentIdx = Math.floor(Math.random() * deck.length); displayCard(); startTimer();
+        }
+
+        function displayCard() {
+            const word = deck[currentIdx]; const typeEl = document.getElementById('display-type');
+            typeEl.innerText = word.type; typeEl.className = `type-tag tag-${word.type}`;
+            document.getElementById('display-q').innerText = word[qLang];
+            document.getElementById('view-flash').style.display = (style === 'flash') ? 'block' : 'none';
+            document.getElementById('view-trivia').style.display = (style === 'trivia') ? 'block' : 'none';
+            if (style === 'flash') { document.getElementById('display-a').innerText = word[aLang]; document.getElementById('display-a').style.visibility = 'hidden'; document.getElementById('btn-reveal').style.display = 'block'; document.getElementById('flash-controls').style.display = 'none'; }
+            else generateTrivia(); updateStats(); updateProgress();
+        }
+
+        function startTimer() { clearInterval(timerInterval); if (style === 'flash') return; timeLeft = timerMax; timerInterval = setInterval(() => { timeLeft -= 0.1; document.getElementById('timer-num').innerText = Math.ceil(timeLeft); document.getElementById('timer-bar').style.strokeDashoffset = 144.5 * (1 - timeLeft / timerMax); if (timeLeft <= 0) { clearInterval(timerInterval); submitAnswer(false); } }, 100); }
+
+        function generateTrivia() {
+            const correct = deck[currentIdx][aLang];
+            let decoys = uniqueWords.map(w => w[aLang]).filter(w => w !== correct).sort(() => 0.5 - Math.random()).slice(0, 4);
+            const options = [...decoys, correct].sort(() => 0.5 - Math.random());
+            const container = document.getElementById('trivia-options'); container.innerHTML = '';
+            options.forEach(opt => { const btn = document.createElement('button'); btn.className = 'choice-btn'; btn.innerText = opt; btn.onclick = () => { clearInterval(timerInterval); if (opt === correct) { btn.classList.add('correct'); stats.points += 10; setTimeout(() => submitAnswer(true), 400); } else { btn.classList.add('wrong'); setTimeout(() => submitAnswer(false), 600); } }; container.appendChild(btn); });
+        }
+
+        function submitAnswer(isCorrect) { 
+            const word = deck[currentIdx]; if (isCorrect) { stats.c++; mastered.add(word.ru); deck.splice(currentIdx, 1); save(); } 
+            else { stats.m++; nextRound.push(word); deck.splice(currentIdx, 1); } nextWord(); 
+        }
+
+        function revealFlash() { document.getElementById('display-a').style.visibility = 'visible'; document.getElementById('btn-reveal').style.display = 'none'; document.getElementById('flash-controls').style.display = 'flex'; }
+        function setDifficulty(v) { timerMax = v; nextWord(); }
+        function setPlayStyle(s) { style = s; document.getElementById('difficulty-ui').style.display = (s === 'trivia') ? 'flex' : 'none'; document.getElementById('trivia-stats-header').style.visibility = (s === 'trivia') ? 'visible' : 'hidden'; nextWord(); }
+        function setLangMode(q, a, btn) { qLang = q; aLang = a; document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); displayCard(); }
+        function updateStats() { document.getElementById('stat-left').innerText = deck.length; document.getElementById('stat-c').innerText = stats.c; document.getElementById('stat-m').innerText = stats.m; document.getElementById('stat-points').innerText = stats.points; document.getElementById('stat-total-rem').innerText = deck.length + nextRound.length; }
+        function toggleDict() { const d = document.getElementById('dict-section'); d.style.display = d.style.display === 'block' ? 'none' : 'block'; renderDict(); }
+        function renderDict() { const list = document.getElementById('dict-list'); list.innerHTML = `<div class="dict-item" style="font-weight: bold; border-bottom: 2px solid #ddd;"><span>CAT</span><span>RU</span><span>EE</span><span>EN</span></div>` + uniqueWords.map(w => `<div class="dict-item ${mastered.has(w.ru) ? 'mastered' : ''}"><span class="type-tag tag-${w.type}" style="margin:0; font-size:8px;">${w.type}</span><span>${w.ru}</span><span>${w.ee}</span><span>${w.en}</span></div>`).join(''); }
+
+        // Dynamic categories WITHOUT removing "all"
+        const categories = [...new Set(uniqueWords.map(w => w.type))].sort();
+        const filter = document.getElementById('cat-filter');
+        categories.forEach(c => { const opt = document.createElement('option'); opt.value = c; opt.innerText = c.charAt(0).toUpperCase() + c.slice(1); filter.appendChild(opt); });
+
+        resetDeck();
+    </script>
+</body>
+</html>
+
